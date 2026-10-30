@@ -3,6 +3,10 @@
 Chrome / Edge 通用（Manifest V3）。作用是把浏览器发起的下载交给本机运行的 OpenDM，
 并把当前标签页的 Cookie、Referer 一起带过去 —— 需要登录才能下的资源因此也能多线程分段下。
 
+> **两种拿法，内容一样**：① 下载 Release 里的 `OpenDM-Extension-v1.0.0.zip` 解压，得到
+> `OpenDM-Extension` 文件夹；② 直接用仓库里的 `ext/browser` 目录。下面第 4 步选的就是这个
+> **包含 `manifest.json` 的那一层文件夹**，别再多选一层。
+
 ## 安装
 
 1. 先启动 OpenDM，打开 **设置 → 浏览器接管**，确认勾选「开启本地接管接口」，记下 **端口** 和 **令牌**。

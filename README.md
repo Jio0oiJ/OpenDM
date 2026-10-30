@@ -1,6 +1,11 @@
 # OpenDM · 开源下载管理器
 
-**[⬇ 下载最新版](https://github.com/Jio0oiJ/OpenDM/releases/latest)** —— 单文件 `OpenDM.exe`，免安装（需 .NET 8 桌面运行时）
+**[⬇ 下载最新版](https://github.com/Jio0oiJ/OpenDM/releases/latest)**
+
+| 文件 | 说明 |
+| --- | --- |
+| `OpenDM.exe` | 主程序，单文件免安装（需 .NET 8 桌面运行时） |
+| `OpenDM-Extension-v1.0.0.zip` | 浏览器接管扩展，Chrome / Edge 通用，解压后加载即可 |
 
 一个**从零自研**的 Windows 多线程下载器。分段并发、断点续传、队列调度、全局限速、浏览器接管，全部代码在本仓库里，没有引用任何第三方下载内核。
 
@@ -54,7 +59,14 @@
 
 装了扩展之后，浏览器里点下载的瞬间就被接管：文件进 OpenDM 多线程下，当前标签页的 Cookie 与 Referer 一起带过去（否则登录态资源会 401/403）。
 
-开启方式：OpenDM **设置 → 浏览器接管**（默认已开，端口 65200，带一个随机令牌）→ 浏览器 `chrome://extensions` 或 `edge://extensions` → 开发者模式 → 加载已解压的扩展程序 → 选 `ext/browser` → 在扩展选项页填端口和令牌。详见 [ext/README.md](ext/README.md)。
+开启方式：
+
+1. 下载 Release 里的 **`OpenDM-Extension-v1.0.0.zip`** 并解压（得到 `OpenDM-Extension` 文件夹，`manifest.json` 在根部）。也可以直接用仓库里的 `ext/browser` 目录。
+2. 浏览器 `chrome://extensions` 或 `edge://extensions` → 打开 **开发者模式** → **加载已解压的扩展程序** → 选该文件夹。
+3. 先启动 OpenDM，进 **设置 → 浏览器接管**（默认已开，端口 65200，带一个随机令牌），复制端口和令牌。
+4. 点扩展的 **选项**，粘贴后保存，显示绿色「已连上 OpenDM」即完成。
+
+详见 [ext/README.md](ext/README.md)。连不上 OpenDM 时扩展会自动放行浏览器原生下载，不会出现「装了扩展什么也下不了」。
 
 本地接口只有三个动作，走 `127.0.0.1` + 令牌，外网访问不到：
 
@@ -90,6 +102,7 @@ tests/OpenDM.SelfTest/     引擎自测 + 本地 Range 测试服务器
 tools/                     构建期小工具
   IconGen.cs               程序化绘制图标（渐变圆角块 + 下箭头 + 托盘）
   make-icon.ps1            生成 .ico 与扩展 PNG：`powershell -File tools\make-icon.ps1`
+  make-ext.py              打包扩展为 dist/OpenDM-Extension-v*.zip：`python tools/make-ext.py`
   UiShot/                  离屏渲染主窗口成 PNG，用来核对排版（不弹窗、不截屏）
 ```
 
