@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #0E1116; --surface: #151A21; --surface2: #1A212A;
+    --border: #242C37; --text: #E6EDF3; --muted: #8A97A6; --accent: #4C8DFF;
+    --green: #3FB950; --red: #F85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    width: 310px; margin: 0; padding: 16px;
+    background: var(--bg); color: var(--text);
+    font: 12.5px/1.55 "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+  }
+  .head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.on { background: var(--green); box-shadow: 0 0 8px rgba(63,185,80,.7); }
+  .dot.off { background: var(--red); }
+  .title { font-weight: 600; font-size: 13px; }
+  .stat { color: var(--muted); font-size: 11.5px; margin-left: auto; text-align: right; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 13px; margin-bottom: 10px;
+  }
+  .label { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .url { word-break: break-all; font-size: 11.5px; max-height: 46px; overflow: hidden; }
+  button {
+    width: 100%; padding: 9px; border-radius: 8px; cursor: pointer; font-size: 12.5px;
+    border: 1px solid var(--border); background: transparent; color: var(--text);
+    font-family: inherit; margin-top: 8px;
+  }
+  button:hover { background: var(--surface2); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover { background: #5C99FF; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .link { color: var(--muted); font-size: 11.5px; cursor: pointer; text-decoration: none; }
+  .link:hover { color: var(--accent); }
+  .switch { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 11.5px; color: var(--muted); }
+  .switch input { display: none; }
+  .track { width: 34px; height: 18px; border-radius: 9px; background: var(--surface2);
+           border: 1px solid var(--border); position: relative; transition: background .15s; flex: none; }
+  .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+                  border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+  .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(16px); background: #fff; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="dot" id="dot"></div>
+    <div class="title">OpenDM</div>
+    <div class="stat" id="stat">检查中…</div>
+  </div>
+
+  <div class="card">
+    <div class="label">当前页面</div>
+    <div class="url" id="url">—</div>
+    <button class="primary" id="send">把这个地址交给 OpenDM</button>
+  </div>
+
+  <div class="foot">
+    <label class="switch">
+      <input id="enabled" type="checkbox">
+      <span class="track"></span>
+      <span>开启接管</span>
+    </label>
+    <a class="link" id="opts">设置…</a>
+  </div>
+
+<script src="popup.js"></script>
+</body>
+</html>

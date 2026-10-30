@@ -1,0 +1,9 @@
+bin/
+obj/
+dist/
+_tools/
+*.user
+.vs/
+
+# 工具生成的临时图片（图标预览、界面截图）
+tools/*.png

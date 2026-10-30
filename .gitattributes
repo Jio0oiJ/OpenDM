@@ -1,0 +1,11 @@
+# 统一换行：仓库内用 LF，Windows 脚本保持 CRLF
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+
+# 二进制
+*.png binary
+*.ico binary
+*.exe binary
