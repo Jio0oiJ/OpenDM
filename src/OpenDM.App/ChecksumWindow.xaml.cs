@@ -66,7 +66,6 @@ public partial class ChecksumWindow : Window
             StatusText.Foreground = (Brush)FindResource("GreenBrush");
 
             CopyBtn.IsEnabled = true;
-            CopySumBtn.IsEnabled = true;
         }
         catch (OperationCanceledException)
         {
@@ -124,21 +123,6 @@ public partial class ChecksumWindow : Window
         catch
         {
             CopyBtn.Content = "复制失败";
-        }
-    }
-
-    private void CopySum_Click(object sender, RoutedEventArgs e)
-    {
-        if (_hash.Length == 0) return;
-        try
-        {
-            // 和 sha256sum 命令的输出格式一致：哈希 + 两个空格 + 文件名
-            Clipboard.SetText($"{_hash}  {_fileName}");
-            CopySumBtn.Content = "已复制";
-        }
-        catch
-        {
-            CopySumBtn.Content = "复制失败";
         }
     }
 

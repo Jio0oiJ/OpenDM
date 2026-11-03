@@ -5,7 +5,7 @@
 | 文件 | 说明 |
 | --- | --- |
 | `OpenDM.exe` | 主程序，单文件免安装（需 .NET 8 桌面运行时） |
-| `OpenDM-Extension-v1.0.0.zip` | 浏览器接管扩展，Chrome / Edge 通用，解压后加载即可 |
+| `OpenDM-Extension-v*.zip` | 浏览器接管扩展，Chrome / Edge 通用，解压后加载即可（版本号以 Release 页为准） |
 
 一个**从零自研**的 Windows 多线程下载器。分段并发、断点续传、队列调度、全局限速、浏览器接管，全部代码在本仓库里，没有引用任何第三方下载内核。
 
@@ -80,7 +80,7 @@
 
 开启方式：
 
-1. 下载 Release 里的 **`OpenDM-Extension-v1.0.0.zip`** 并解压（得到 `OpenDM-Extension` 文件夹，`manifest.json` 在根部）。也可以直接用仓库里的 `ext/browser` 目录。
+1. 下载 Release 里的 **`OpenDM-Extension-v*.zip`** 并解压（得到 `OpenDM-Extension` 文件夹，`manifest.json` 在根部）。也可以直接用仓库里的 `ext/browser` 目录。
 2. 浏览器 `chrome://extensions` 或 `edge://extensions` → 打开 **开发者模式** → **加载已解压的扩展程序** → 选该文件夹。
 3. 先启动 OpenDM，进 **设置 → 浏览器接管**（默认已开，端口 65200，带一个随机令牌），复制端口和令牌。
 4. 点扩展的 **选项**，粘贴后保存，显示绿色「已连上 OpenDM」即完成。

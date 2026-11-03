@@ -55,12 +55,9 @@
 
             <TextBlock x:Name="HintText" Grid.Row="4" Style="{StaticResource Muted}" FontSize="11"
                        Margin="0,12,0,0" TextWrapping="Wrap"
-                       Text="复制格式为「哈希  文件名」，可直接和官方公布的 sha256sum 对比。"/>
+                       Text="可直接和官方公布的 SHA-256 校验值比对。"/>
 
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                <Button x:Name="CopySumBtn" Content="复制 sha256sum" Style="{StaticResource LinkBtn}"
-                        VerticalAlignment="Center" Margin="0,0,14,0" IsEnabled="False"
-                        Click="CopySum_Click"/>
                 <Button x:Name="CopyBtn" Content="复制哈希" Style="{StaticResource ToolBtn}"
                         Width="94" MinHeight="38" IsEnabled="False" Click="CopyHash_Click"/>
                 <Button Content="关闭" Style="{StaticResource PrimaryBtn}" Width="92" MinHeight="38"
