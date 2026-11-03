@@ -217,6 +217,19 @@ namespace UiShot
             var container = list.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
             var menu = (ContextMenu)win.FindResource("TaskMenu");
 
+            // 「打开文件」「校验 SHA-256」只在文件真实存在时才出现，
+            // 而样本任务的路径是编的 —— 这里临时造个同名文件，把这几个菜单项也拍进来
+            string? probeDir = null;
+            string? originalPath = task?.SavePath;
+            if (task is { State: TaskState.Completed } && originalPath is not null)
+            {
+                probeDir = Path.Combine(Path.GetTempPath(), "opendm-menuprobe-" + Guid.NewGuid().ToString("n"));
+                Directory.CreateDirectory(probeDir);
+                var probe = Path.Combine(probeDir, Path.GetFileName(originalPath));
+                File.WriteAllBytes(probe, new byte[1024]);
+                task.SavePath = probe;
+            }
+
             menu.PlacementTarget = (UIElement?)container ?? list;
             menu.DataContext = task;
 
@@ -262,6 +275,9 @@ namespace UiShot
 
             Console.WriteLine($"saved menu({task?.State}, {task?.FileName}) -> {outPath}" +
                               $" ({w:F0}x{h:F0})");
+
+            if (task is not null && originalPath is not null) task.SavePath = originalPath;
+            if (probeDir is not null) { try { Directory.Delete(probeDir, true); } catch { } }
         }
 
         static ListBox Inject(MainWindow win)
