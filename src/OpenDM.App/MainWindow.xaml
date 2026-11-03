@@ -100,6 +100,15 @@
                 </MenuItem.Header>
             </MenuItem>
 
+            <MenuItem Tag="sha256" Click="CtxSha256_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE73E;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="校验 SHA-256"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
             <MenuItem Tag="delfile" Click="CtxDeleteWithFile_Click" Foreground="{StaticResource RedBrush}">
                 <MenuItem.Header>
                     <StackPanel Orientation="Horizontal">

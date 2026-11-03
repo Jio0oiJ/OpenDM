@@ -381,6 +381,7 @@ public partial class MainWindow : Window
         bool busy = t.State is TaskState.Downloading or TaskState.Queued or TaskState.Probing;
 
         SetVisible(menu, "open", hasFile);
+        SetVisible(menu, "sha256", hasFile);   // 没下完的文件算出来的哈希没意义
         SetVisible(menu, "resume", !busy && t.State != TaskState.Completed);
         SetVisible(menu, "pause", busy);
 
@@ -428,6 +429,19 @@ public partial class MainWindow : Window
     {
         var dlg = new PropertiesWindow(t) { Owner = this };
         dlg.ShowDialog();
+    });
+
+    private void CtxSha256_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        if (!File.Exists(t.SavePath))
+        {
+            Toast("文件不存在，无法校验");
+            return;
+        }
+
+        // 非模态：几个 GB 的文件算起来要几十秒，别把主界面锁住
+        var dlg = new ChecksumWindow(t) { Owner = this };
+        dlg.Show();
     });
 
     private void CtxDeleteWithFile_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>

@@ -33,11 +33,14 @@ namespace UiShot
             // --menu=N：不拍整个窗口，只把第 N 行任务的右键菜单拍下来
             // （ContextMenu 是独立 popup，窗口渲染里看不到它，只能单独量它）
             // --props=N：把第 N 行任务的属性窗口拍下来
+            // --sha：造个临时文件跑一遍 SHA-256 窗口，顺便比对算出来的哈希对不对
             int menuIndex = -1, propsIndex = -1;
+            bool shaMode = false;
             foreach (var a in args)
             {
                 if (a.StartsWith("--menu=") && int.TryParse(a.Substring(7), out int mi)) menuIndex = mi;
                 if (a.StartsWith("--props=") && int.TryParse(a.Substring(8), out int pi)) propsIndex = pi;
+                if (a == "--sha") shaMode = true;
             }
 
             // 隔离数据目录，避免污染真实的下载任务列表
@@ -82,6 +85,10 @@ namespace UiShot
             if (menuIndex >= 0)
             {
                 RenderMenu(win, list, menuIndex, outPath);
+            }
+            else if (shaMode)
+            {
+                RenderChecksum(win, outPath);
             }
             else if (propsIndex >= 0)
             {
@@ -131,6 +138,73 @@ namespace UiShot
             win.Close();
             try { Directory.Delete(dataDir, true); } catch { }
             app.Shutdown();
+        }
+
+        /// <summary>
+        /// 造一个确定内容的临时文件，跑一遍 SHA-256 窗口：
+        /// 一边把窗口渲染成图看排版，一边比对算出来的哈希是否等于标准 sha256。
+        /// </summary>
+        static void RenderChecksum(MainWindow win, string outPath)
+        {
+            string tmp = Path.Combine(Path.GetTempPath(), "opendm-sha-" + Guid.NewGuid().ToString("n") + ".bin");
+            var bytes = new byte[3_400_000];
+            new Random(7).NextBytes(bytes);
+            File.WriteAllBytes(tmp, bytes);
+
+            string expect = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+
+            var task = new DownloadTask
+            {
+                Url = "https://example.com/payload.bin",
+                SavePath = tmp,
+                TotalBytes = bytes.Length,
+                BytesDone = bytes.Length,
+                State = TaskState.Completed,
+                SupportsRange = true,
+                IsPrepared = true
+            };
+
+            var dlg = new ChecksumWindow(task)
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                Left = -20000,
+                Top = -20000,
+                ShowInTaskbar = false,
+                ShowActivated = false
+            };
+            dlg.Show();
+            DoEvents();
+
+            var box = (TextBox)dlg.FindName("HashBox");
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline && box.Text.Length != 64)
+            {
+                DoEvents();
+                System.Threading.Thread.Sleep(40);
+            }
+
+            DoEvents();
+            dlg.UpdateLayout();
+            DoEvents();
+
+            Console.WriteLine(box.Text.Length == 64
+                ? (box.Text == expect ? "SHA-256 一致 ✓" : $"SHA-256 不一致 ✗\n  got={box.Text}\n  exp={expect}")
+                : "SHA-256 未算完： " + box.Text);
+
+            double w = dlg.ActualWidth, h = dlg.ActualHeight;
+            const double scale = 2.0;
+            var rtb = new RenderTargetBitmap((int)(w * scale), (int)(h * scale),
+                96 * scale, 96 * scale, PixelFormats.Pbgra32);
+            rtb.Render(dlg);
+
+            var enc = new PngBitmapEncoder();
+            enc.Frames.Add(BitmapFrame.Create(rtb));
+            using (var fs = File.Create(outPath)) enc.Save(fs);
+
+            Console.WriteLine($"saved sha -> {outPath} ({w}x{h})");
+            dlg.Close();
+            try { File.Delete(tmp); } catch { }
         }
 
         /// <summary>
