@@ -324,7 +324,13 @@ public partial class MainWindow : Window
 
         if (r == MessageBoxResult.Cancel) return;
 
-        _mgr.Remove(t, deleteFile: r == MessageBoxResult.Yes);
+        RemoveTask(t, deleteFile: r == MessageBoxResult.Yes);
+    }
+
+    /// <summary>删任务时统一走这里，保证集合、状态缓存、引擎三处一起清掉。</summary>
+    private void RemoveTask(DownloadTask t, bool deleteFile)
+    {
+        _mgr.Remove(t, deleteFile: deleteFile);
         _tasks.Remove(t);
         _lastState.Remove(t.Id);
         _view.Refresh();
@@ -334,7 +340,11 @@ public partial class MainWindow : Window
     private void BtnHeaders_Click(object sender, RoutedEventArgs e)
     {
         if (TaskList.SelectedItem is not DownloadTask t) return;
+        EditHeaders(t);
+    }
 
+    private void EditHeaders(DownloadTask t)
+    {
         var dlg = new HeaderWindow(t.FileName, t.Headers) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
@@ -345,6 +355,120 @@ public partial class MainWindow : Window
             ? "已清除请求头"
             : $"已保存 {parsed.Count} 项请求头 · 下次开始 / 继续时生效";
         Tick();
+    }
+
+    // ---------------------------------------------------------------- 右键菜单
+
+    /// <summary>
+    /// 右键点哪一行就选中哪一行。WPF 默认右键不改选中项，
+    /// 不处理的话会出现「右键看着是第一行，删掉的却是之前选中的那个」。
+    /// </summary>
+    private void TaskList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not { } item) return;
+        item.IsSelected = true;
+        item.Focus();
+    }
+
+    /// <summary>每次弹出前按任务当前状态调整可用项（打开文件只对已完成且文件还在的任务有意义）。</summary>
+    private void TaskMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu) return;
+
+        if (menu.PlacementTarget is not FrameworkElement { DataContext: DownloadTask t }) return;
+
+        bool hasFile = t.State == TaskState.Completed && File.Exists(t.SavePath);
+        bool busy = t.State is TaskState.Downloading or TaskState.Queued or TaskState.Probing;
+
+        SetVisible(menu, "open", hasFile);
+        SetVisible(menu, "resume", !busy && t.State != TaskState.Completed);
+        SetVisible(menu, "pause", busy);
+
+        static void SetVisible(ContextMenu menu, string tag, bool visible)
+        {
+            var item = menu.Items.OfType<MenuItem>().FirstOrDefault(m => Equals(m.Tag, tag));
+            if (item is not null)
+                item.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>取右键菜单对应的任务（PlacementTarget 就是那一行，取不到再退回当前选中项）。</summary>
+    private DownloadTask? MenuTask(UIElement? placementTarget) =>
+        (placementTarget as FrameworkElement)?.DataContext as DownloadTask
+        ?? TaskList.SelectedItem as DownloadTask;
+
+    private void CtxOpenFile_Click(object sender, RoutedEventArgs e) =>
+        WithMenuTask(sender, OpenFile);
+
+    private void CtxReveal_Click(object sender, RoutedEventArgs e) =>
+        WithMenuTask(sender, RevealInExplorer);
+
+    private void CtxResume_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        if (t.State == TaskState.Completed) return;
+        _mgr.Start(t);
+        Tick();
+    });
+
+    private void CtxPause_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        _mgr.Pause(t);
+        Tick();
+    });
+
+    private void CtxHeaders_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, EditHeaders);
+
+    private void CtxCopyUrl_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+        CopyToClipboard(t.Url, "下载链接"));
+
+    private void CtxCopyPath_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+        CopyToClipboard(t.SavePath, "保存路径"));
+
+    private void CtxProperties_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        var dlg = new PropertiesWindow(t) { Owner = this };
+        dlg.ShowDialog();
+    });
+
+    private void CtxDeleteWithFile_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        var r = MessageBox.Show(this,
+            $"删除任务并删除已下载的文件？\n\n{t.SavePath}\n\n此操作不可撤销。",
+            "删除任务和文件", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (r != MessageBoxResult.Yes) return;
+
+        RemoveTask(t, deleteFile: true);
+        Toast("已删除任务和文件");
+    });
+
+    private void CtxRemoveKeepFile_Click(object sender, RoutedEventArgs e) => WithMenuTask(sender, t =>
+    {
+        RemoveTask(t, deleteFile: false);
+        Toast("已从列表移除，文件保留在原处");
+    });
+
+    private void WithMenuTask(object sender, Action<DownloadTask> action)
+    {
+        // 菜单项 → 往上找 ContextMenu → 它的 PlacementTarget 就是被右键的那一行
+        var menu = sender is DependencyObject d ? FindAncestor<ContextMenu>(d) : null;
+        var t = menu is not null ? MenuTask(menu.PlacementTarget) : TaskList.SelectedItem as DownloadTask;
+        if (t is null) return;
+        action(t);
+    }
+
+    private void CopyToClipboard(string text, string what)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        try
+        {
+            Clipboard.SetText(text);
+            Toast($"已复制{what}");
+        }
+        catch (Exception ex)
+        {
+            Toast($"复制失败：{ex.Message}");
+        }
     }
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e)

@@ -30,6 +30,16 @@ namespace UiShot
                 ? args[0]
                 : "ui-shot.png");
 
+            // --menu=N：不拍整个窗口，只把第 N 行任务的右键菜单拍下来
+            // （ContextMenu 是独立 popup，窗口渲染里看不到它，只能单独量它）
+            // --props=N：把第 N 行任务的属性窗口拍下来
+            int menuIndex = -1, propsIndex = -1;
+            foreach (var a in args)
+            {
+                if (a.StartsWith("--menu=") && int.TryParse(a.Substring(7), out int mi)) menuIndex = mi;
+                if (a.StartsWith("--props=") && int.TryParse(a.Substring(8), out int pi)) propsIndex = pi;
+            }
+
             // 隔离数据目录，避免污染真实的下载任务列表
             string dataDir = Path.Combine(Path.GetTempPath(), "opendm-uishot-" + Guid.NewGuid().ToString("n"));
             Directory.CreateDirectory(dataDir);
@@ -69,22 +79,115 @@ namespace UiShot
             win.UpdateLayout();
             DoEvents();
 
-            double cw = win.ActualWidth > 0 ? win.ActualWidth : W;
-            double ch = win.ActualHeight > 0 ? win.ActualHeight : H;
+            if (menuIndex >= 0)
+            {
+                RenderMenu(win, list, menuIndex, outPath);
+            }
+            else if (propsIndex >= 0)
+            {
+                var task = list.Items[propsIndex] as DownloadTask;
+                var dlg = new PropertiesWindow(task!)
+                {
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000,
+                    ShowInTaskbar = false,
+                    ShowActivated = false
+                };
+                dlg.Show();
+                DoEvents();
+                dlg.UpdateLayout();
+                DoEvents();
 
-            const double scale = 1.5;
-            var rtb = new RenderTargetBitmap((int)(cw * scale), (int)(ch * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-            rtb.Render(win);
+                double pw = dlg.ActualWidth, ph = dlg.ActualHeight;
+                const double scale = 1.5;
+                var rtb = new RenderTargetBitmap((int)(pw * scale), (int)(ph * scale),
+                    96 * scale, 96 * scale, PixelFormats.Pbgra32);
+                rtb.Render(dlg);
+
+                var enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(rtb));
+                using (var fs = File.Create(outPath)) enc.Save(fs);
+
+                Console.WriteLine($"saved props({task?.State}) -> {outPath} ({pw}x{ph})");
+                dlg.Close();
+            }
+            else
+            {
+                double cw = win.ActualWidth > 0 ? win.ActualWidth : W;
+                double ch = win.ActualHeight > 0 ? win.ActualHeight : H;
+
+                const double scale = 1.5;
+                var rtb = new RenderTargetBitmap((int)(cw * scale), (int)(ch * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
+                rtb.Render(win);
+
+                var enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(rtb));
+                using (var fs = File.Create(outPath)) enc.Save(fs);
+
+                Console.WriteLine("saved " + outPath + $" ({cw}x{ch})");
+            }
+
+            win.Close();
+            try { Directory.Delete(dataDir, true); } catch { }
+            app.Shutdown();
+        }
+
+        /// <summary>
+        /// 把任务行的右键菜单单独渲染成一张图。菜单是 popup，不在窗口视觉树里，
+        /// 只能手动 Measure/Arrange 后再 RenderTargetBitmap。
+        /// </summary>
+        static void RenderMenu(MainWindow win, ListBox list, int index, string outPath)
+        {
+            var task = list.Items[index] as DownloadTask;
+            var container = list.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
+            var menu = (ContextMenu)win.FindResource("TaskMenu");
+
+            menu.PlacementTarget = (UIElement?)container ?? list;
+            menu.DataContext = task;
+
+            // TaskMenu_Opened 是私有的（状态相关的项按任务状态显示/隐藏），用反射触发一次
+            typeof(MainWindow).GetMethod("TaskMenu_Opened",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?.Invoke(win, new object[] { menu, new RoutedEventArgs() });
+
+            menu.ApplyTemplate();
+            menu.Measure(new Size(600, double.PositiveInfinity));
+            menu.Arrange(new Rect(menu.DesiredSize));
+            menu.UpdateLayout();
+            DoEvents();
+
+            // ContextMenu 不允许有父级（OnAncestorChanged 会直接抛），
+            // 所以不能塞进 Border 再渲染：改成先画底色，再用 VisualBrush 把菜单画上去。
+            var ms = menu.DesiredSize;
+            const double pad = 26;
+            double w = ms.Width + pad * 2, h = ms.Height + pad * 2;
+
+            const double scale = 3.0;
+            var rtb = new RenderTargetBitmap(
+                (int)Math.Ceiling(w * scale), (int)Math.Ceiling(h * scale),
+                96 * scale, 96 * scale, PixelFormats.Pbgra32);
+
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                dc.DrawRectangle((Brush)win.FindResource("BgBrush"), null, new Rect(0, 0, w, h));
+                var vb = new VisualBrush(menu)
+                {
+                    Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Left,
+                    AlignmentY = AlignmentY.Top
+                };
+                dc.DrawRectangle(vb, null, new Rect(pad, pad, ms.Width, ms.Height));
+            }
+            rtb.Render(dv);
 
             var enc = new PngBitmapEncoder();
             enc.Frames.Add(BitmapFrame.Create(rtb));
             using (var fs = File.Create(outPath)) enc.Save(fs);
 
-            Console.WriteLine("saved " + outPath + $" ({cw}x{ch})");
-
-            win.Close();
-            try { Directory.Delete(dataDir, true); } catch { }
-            app.Shutdown();
+            Console.WriteLine($"saved menu({task?.State}, {task?.FileName}) -> {outPath}" +
+                              $" ({w:F0}x{h:F0})");
         }
 
         static ListBox Inject(MainWindow win)

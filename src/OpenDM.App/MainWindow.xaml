@@ -20,6 +20,105 @@
         <local:ZeroToVisibleConverter x:Key="ZeroToVisible"/>
         <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
 
+        <!-- 任务行右键菜单（挂在 ListBoxItem 样式上，只有点在行内才弹） -->
+        <ContextMenu x:Key="TaskMenu" Opened="TaskMenu_Opened" Placement="MousePoint">
+            <MenuItem Tag="open" Click="CtxOpenFile_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE8E5;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="打开文件"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="reveal" Click="CtxReveal_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE838;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="打开所在文件夹"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <Separator/>
+
+            <MenuItem Tag="resume" Click="CtxResume_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE768;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="继续下载"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="pause" Click="CtxPause_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE769;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="暂停下载"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="headers" Click="CtxHeaders_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE72E;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="请求头 / Cookie…"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <Separator/>
+
+            <MenuItem Tag="copyurl" Click="CtxCopyUrl_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE71B;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="复制下载链接"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="copypath" Click="CtxCopyPath_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE8B7;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="复制保存路径"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <Separator/>
+
+            <MenuItem Tag="props" Click="CtxProperties_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE946;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="属性"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="delfile" Click="CtxDeleteWithFile_Click" Foreground="{StaticResource RedBrush}">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE74D;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="删除任务和文件"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
+            <MenuItem Tag="delkeep" Click="CtxRemoveKeepFile_Click">
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource MenuGlyph}" Text="&#xE738;"/>
+                        <TextBlock Style="{StaticResource MenuText}" Text="仅从列表移除"/>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+        </ContextMenu>
+
         <!-- 左侧分类项 -->
         <Style x:Key="FilterItemStyle" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
@@ -54,6 +153,7 @@
             <Setter Property="Margin" Value="0,0,0,1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="ContextMenu" Value="{StaticResource TaskMenu}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
@@ -274,6 +374,7 @@
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              SelectionChanged="TaskList_SelectionChanged"
                              MouseDoubleClick="TaskList_MouseDoubleClick"
+                             PreviewMouseRightButtonDown="TaskList_PreviewMouseRightButtonDown"
                              KeyDown="TaskList_KeyDown">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
