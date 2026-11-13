@@ -94,6 +94,31 @@
     </div>
   </div>
 
+  <div class="card">
+    <label for="exePath">主程序路径</label>
+    <input id="exePath" type="text" placeholder="C:\Tools\OpenDM\OpenDM.exe" spellcheck="false">
+    <div class="hint">
+      留空 = 用系统里已登记的路径。手动填了之后点「写入系统」，OpenDM 会把它写进注册表，<b>下次浏览器要唤起时就用这个 exe</b>。
+    </div>
+    <div class="actions">
+      <button id="writePath">写入系统</button>
+      <button id="readPath">读取当前</button>
+      <span id="pathStatus" style="font-size:12.5px"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="switch">
+      <input id="autoLaunch" type="checkbox">
+      <span class="track"></span>
+      <span>连不上时自动启动 OpenDM</span>
+    </label>
+    <div class="hint">
+      需要先在 OpenDM 的「设置 → 浏览器自动唤起」里点一次『安装』（只写当前用户注册表，装一次即可）。
+      浏览器只在自身启动时读这份配置，所以装完/改完路径后要重启一次浏览器。
+    </div>
+  </div>
+
   <div class="actions">
     <button class="primary" id="save">保存</button>
     <button id="test">测试连接</button>

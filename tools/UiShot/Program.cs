@@ -34,13 +34,15 @@ namespace UiShot
             // （ContextMenu 是独立 popup，窗口渲染里看不到它，只能单独量它）
             // --props=N：把第 N 行任务的属性窗口拍下来
             // --sha：造个临时文件跑一遍 SHA-256 窗口，顺便比对算出来的哈希对不对
+            // --settings：把设置窗口拍下来（检查新增的「浏览器自动唤起」区块排版）
             int menuIndex = -1, propsIndex = -1;
-            bool shaMode = false;
+            bool shaMode = false, settingsMode = false;
             foreach (var a in args)
             {
                 if (a.StartsWith("--menu=") && int.TryParse(a.Substring(7), out int mi)) menuIndex = mi;
                 if (a.StartsWith("--props=") && int.TryParse(a.Substring(8), out int pi)) propsIndex = pi;
                 if (a == "--sha") shaMode = true;
+                if (a == "--settings") settingsMode = true;
             }
 
             // 隔离数据目录，避免污染真实的下载任务列表
@@ -89,6 +91,34 @@ namespace UiShot
             else if (shaMode)
             {
                 RenderChecksum(win, outPath);
+            }
+            else if (settingsMode)
+            {
+                var sw = new SettingsWindow(AppSettings.Load())
+                {
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000,
+                    ShowInTaskbar = false,
+                    ShowActivated = false
+                };
+                sw.Show();
+                DoEvents();
+                sw.UpdateLayout();
+                DoEvents();
+
+                double swid = sw.ActualWidth, shei = sw.ActualHeight;
+                const double scale = 1.5;
+                var srtb = new RenderTargetBitmap((int)(swid * scale), (int)(shei * scale),
+                    96 * scale, 96 * scale, PixelFormats.Pbgra32);
+                srtb.Render(sw);
+
+                var senc = new PngBitmapEncoder();
+                senc.Frames.Add(BitmapFrame.Create(srtb));
+                using (var sfs = File.Create(outPath)) senc.Save(sfs);
+
+                Console.WriteLine($"saved settings -> {outPath} ({swid}x{shei})");
+                sw.Close();
             }
             else if (propsIndex >= 0)
             {

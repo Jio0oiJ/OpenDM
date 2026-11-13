@@ -1,7 +1,7 @@
 <Window x:Class="OpenDM.App.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="设置" Width="600" Height="726" WindowStyle="None" ResizeMode="NoResize"
+        Title="设置" Width="600" Height="832" WindowStyle="None" ResizeMode="NoResize"
         AllowsTransparency="True" Background="Transparent" ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner" Foreground="{StaticResource TextBrush}"
         FontFamily="Microsoft YaHei UI, Segoe UI" FontSize="12.5">
@@ -108,6 +108,34 @@
 
                     <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
                                Text="扩展的选项页里填这两个值。令牌防止任意网页往你队列塞文件，别外传。"/>
+
+                    <!-- ================= 浏览器自动唤起 ================= -->
+                    <TextBlock Text="浏览器自动唤起" Style="{StaticResource SectionTitle}" Margin="0,20,0,10"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock x:Name="LauncherStateText" FontSize="12.5"
+                                       Text="检测中…" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="LauncherPathText" Style="{StaticResource Muted}"
+                                       Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                        <Button x:Name="LauncherInstallBtn" Grid.Column="1" Content="安装"
+                                Style="{StaticResource ToolBtn}" MinHeight="40" Padding="14,0"
+                                Click="LauncherInstall_Click"/>
+                        <Button x:Name="LauncherRemoveBtn" Grid.Column="2" Content="移除"
+                                Style="{StaticResource ToolBtn}" MinHeight="40" Padding="14,0"
+                                Margin="8,0,0,0" Click="LauncherRemove_Click"/>
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="装好后浏览器会自己把 OpenDM 拉起来。只写当前用户注册表，不需要管理员权限。"/>
                 </StackPanel>
             </ScrollViewer>
 

@@ -39,6 +39,68 @@ public partial class SettingsWindow : Window
         TokenBox.Text = current.BridgeToken;
 
         BridgeCheck_Changed(null, null!);
+        RefreshLauncherState();
+    }
+
+    // ---------------------------------------------------------------- 浏览器自动唤起
+
+    private void RefreshLauncherState()
+    {
+        bool on = NativeHost.IsInstalled();
+        var browsers = on ? NativeHost.InstalledBrowsers() : new List<string>();
+
+        if (on && browsers.Count > 0)
+        {
+            LauncherStateText.Text = "已启用 · 已注册到 " + string.Join("、", browsers);
+            LauncherStateText.Foreground = (System.Windows.Media.Brush)FindResource("GreenBrush");
+        }
+        else
+        {
+            LauncherStateText.Text = "未安装 · 浏览器不会自动启动 OpenDM";
+            LauncherStateText.Foreground = (System.Windows.Media.Brush)FindResource("MutedBrush");
+        }
+
+        string path = on ? NativeHost.RegisteredExePath() : "";
+        if (path.Length == 0) path = NativeHost.ExePath;
+
+        LauncherPathText.Text = path;
+        LauncherPathText.ToolTip = path;
+
+        LauncherInstallBtn.Content = on ? "重新安装" : "安装";
+        LauncherRemoveBtn.IsEnabled = on;
+        LauncherRemoveBtn.Opacity = on ? 1 : 0.4;
+    }
+
+    private void LauncherInstall_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            NativeHost.Install();
+            RefreshLauncherState();
+            MessageBox.Show(this,
+                "已安装。浏览器（Chrome / Edge）在连不上 OpenDM 时会自动把它启动起来。\n\n" +
+                "如果浏览器已经打开着，需要重启一次浏览器才会生效 —— 浏览器只在启动时读这份注册表。",
+                "OpenDM", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "安装失败：" + ex.Message, "OpenDM",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void LauncherRemove_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            NativeHost.Uninstall();
+            RefreshLauncherState();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "移除失败：" + ex.Message, "OpenDM",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)

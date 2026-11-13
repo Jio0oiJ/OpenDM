@@ -24,7 +24,17 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 被浏览器通过 native messaging 拉起时，先按协议应答一条指令。
+        // 返回 true 表示这次只是来取路径 / 改路径的，回完就退出，不必开窗口。
+        if (NativeHost.HandleBrowserLaunch())
+        {
+            Environment.Exit(0);
+        }
+
         base.OnStartup(e);
+
+        // 主程序被挪过位置的话，把 host 清单指回来，否则浏览器再想唤起就找不到人了
+        NativeHost.Refresh();
 
         DispatcherUnhandledException += OnUnhandled;
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
